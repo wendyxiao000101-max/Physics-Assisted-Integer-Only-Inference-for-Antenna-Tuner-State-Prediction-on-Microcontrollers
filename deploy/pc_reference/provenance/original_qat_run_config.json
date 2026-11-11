@@ -1,0 +1,8 @@
+{
+  "epochs": 300,
+  "lr": 0.0001,
+  "batch": 512,
+  "out": "strict_int8_v5_focal",
+  "resume": "strict_int8_v4_learned",
+  "focal": 1.0
+}

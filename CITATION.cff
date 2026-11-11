@@ -1,0 +1,32 @@
+cff-version: 1.2.0
+message: "If you use this repository, please cite the paper."
+title: "Physics-Assisted Integer-Only Inference for Antenna Tuner-State Prediction on Microcontrollers"
+authors:
+  - family-names: Xiao
+    given-names: Leyi
+  - family-names: Yang
+    given-names: Xi
+  - family-names: Shi
+    given-names: Yiding
+  - family-names: Wang
+    given-names: Jingwen
+  - family-names: Chen
+    given-names: Xi
+date-released: 2026-11-11
+preferred-citation:
+  type: article
+  title: "Physics-Assisted Integer-Only Inference for Antenna Tuner-State Prediction on Microcontrollers"
+  authors:
+    - family-names: Xiao
+      given-names: Leyi
+    - family-names: Yang
+      given-names: Xi
+    - family-names: Shi
+      given-names: Yiding
+    - family-names: Wang
+      given-names: Jingwen
+    - family-names: Chen
+      given-names: Xi
+  journal: "IEEE Access"
+  year: 2026
+  notes: "Submitted."

@@ -1,0 +1,24 @@
+{
+  "feature": "raw5",
+  "feature_order": [
+    "gammaIn1Re",
+    "gammaIn1Im",
+    "closeFreqMHz",
+    "gammaIn2Re",
+    "gammaIn2Im"
+  ],
+  "removed_input": "itState",
+  "architecture": "residual48",
+  "hidden_width": 48,
+  "residual_blocks": 1,
+  "dropout_training_only": 0.05,
+  "optimizer": "AdamW",
+  "learning_rate": 0.001,
+  "weight_decay": 0.00001,
+  "batch_size": 512,
+  "label_smoothing": 0.0,
+  "final_epochs": 96,
+  "final_seed": 20260823,
+  "selection_protocol": "five-fold inferred sweep-group holdout",
+  "quantization": false
+}

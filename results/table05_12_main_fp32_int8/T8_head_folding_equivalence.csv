@@ -1,0 +1,2 @@
+﻿rows,argmax_disagreements,top3_order_disagreements,restored_probability_max_deviation,hybrid_alpha,one_minus_alpha,params_before,params_after,macs_before,macs_after,macs_reduction_pct
+96768,0,0,3.431477468840427e-08,0.999999940609503,5.939049696479515e-08,2800,2784,3168,2688,15.15

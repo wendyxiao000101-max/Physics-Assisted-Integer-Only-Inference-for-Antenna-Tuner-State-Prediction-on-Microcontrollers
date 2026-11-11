@@ -1,0 +1,10 @@
+{
+  "n_estimators": 120,
+  "n_jobs": 4,
+  "seed": "42+fold",
+  "features": "raw5",
+  "split": "same nested sweep_fold_indices; fit train only",
+  "note": "New reproducible probe; does not substitute unpublished configuration behind archived T18",
+  "random210": "balanced random assignment of 7560 points, seed20260823",
+  "greedy": "global shortest edge first, stable ties"
+}

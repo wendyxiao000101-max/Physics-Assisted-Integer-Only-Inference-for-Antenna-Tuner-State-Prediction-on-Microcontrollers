@@ -1,0 +1,4 @@
+﻿budget,cap_bytes,selected_by_valid,bytes,bytes_max,valid_acc,test_acc,test_acc_std,exploratory_best_by_test,exploratory_test_acc
+"≤ 4,656 B（交付 INT8 容器）",4656,decision_tree(max_depth=16) [hard],2098.6,2227,88.23210040735218,88.87420220797651,1.026737061395762,decision_tree(max_depth=None) [hard],88.91081868325853
+"≤ 11,136 B（FP32 折叠参数 2,784×4）",11136,decision_tree(max_depth=16) [hard],2098.6,2227,88.23210040735218,88.87420220797651,1.026737061395762,decision_tree(max_depth=None) [hard],88.91081868325853
+不限,1000000000000,"extra_trees(n_estimators=200,max_depth=None) [hard]",1122532.8,1201392,92.09284381837597,92.05014043019924,0.8850539646792995,"extra_trees(n_estimators=200,max_depth=16) [soft_u8]",92.09765416219481

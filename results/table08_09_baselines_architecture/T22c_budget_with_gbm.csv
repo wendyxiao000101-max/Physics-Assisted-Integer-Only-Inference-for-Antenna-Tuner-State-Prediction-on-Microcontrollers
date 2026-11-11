@@ -1,0 +1,7 @@
+﻿budget,scope,selected_by_valid,bytes,bytes_max,valid_acc,test_acc,test_acc_std
+"≤ 4,656 B（交付 INT8 容器）",全部基线,decision_tree(max_depth=16) [hard],2098.6,2227,88.23210040735218,88.87420220797651,1.026737061395762
+"≤ 4,656 B（交付 INT8 容器）",仅 XGBoost/LightGBM,"lightgbm(n_estimators=5,num_leaves=4,learning_rate=0.3) [gbdt_f32]",2993.0,2993,76.6084142054784,77.04459235286946,1.395453932480379
+"≤ 11,136 B（FP32 折叠参数 2,784×4）",全部基线,decision_tree(max_depth=16) [hard],2098.6,2227,88.23210040735218,88.87420220797651,1.026737061395762
+"≤ 11,136 B（FP32 折叠参数 2,784×4）",仅 XGBoost/LightGBM,"lightgbm(n_estimators=5,num_leaves=8,learning_rate=0.3) [gbdt_f32]",5993.0,5993,85.4912661230532,85.09777915779733,2.2494568168702327
+不限,全部基线,"extra_trees(n_estimators=200,max_depth=None) [hard]",1122532.8,1201392,92.09284381837595,92.05014043019924,0.8850539646792995
+不限,仅 XGBoost/LightGBM,"xgboost(n_estimators=200,max_depth=4,learning_rate=0.3) [gbdt_f32]",251850.0,264278,90.38409085466728,90.03639346721643,1.0327111536218856

@@ -1,0 +1,13 @@
+# Versions used for the paper (Python 3.12, Windows 11, CUDA 12.8).
+# Install the torch build that matches your CUDA version, e.g.
+#   pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cu128
+numpy==2.5.2
+pandas==3.0.5
+scipy==1.18.1
+scikit-learn==1.9.0
+joblib==1.5.3
+torch==2.11.0
+matplotlib==3.11.1
+# Only needed for the tree baselines in archive/baselines_architecture
+xgboost==3.4.1
+lightgbm==4.7.0

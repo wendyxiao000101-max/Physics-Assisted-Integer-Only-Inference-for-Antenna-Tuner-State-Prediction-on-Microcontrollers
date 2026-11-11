@@ -1,0 +1,28 @@
+{
+  "teacher_lr": {
+    "frequencies": 72,
+    "surrogate_real_parameters": 6480,
+    "classifier_real_parameters": 270,
+    "total_real_parameters": 6750,
+    "bytes_float32": 27000,
+    "bytes_float32_plus_freq_table": 27144,
+    "real_multiplications": 510,
+    "real_divisions": 30,
+    "square_roots": 15,
+    "inputs_used": "f, g2Re, g2Im（不使用 Γ1）",
+    "note": "运算量为按上式估算的浮点实数运算次数，不是板端实测；需要浮点除法与开方"
+  },
+  "teacher_argmin": {
+    "frequencies": 72,
+    "surrogate_real_parameters": 6480,
+    "classifier_real_parameters": 0,
+    "total_real_parameters": 6480,
+    "bytes_float32": 25920,
+    "bytes_float32_plus_freq_table": 26064,
+    "real_multiplications": 270,
+    "real_divisions": 30,
+    "square_roots": 15,
+    "inputs_used": "f, g2Re, g2Im（不使用 Γ1）",
+    "note": "运算量为按上式估算的浮点实数运算次数，不是板端实测；需要浮点除法与开方"
+  }
+}

@@ -1,0 +1,11 @@
+﻿run,train,valid,test,all_rows_partition,group_overlap_train_valid,group_overlap_train_test,group_overlap_valid_test
+random_seed42,67737,14515,14516,True,210,210,210
+random_seed43,67737,14515,14516,True,210,210,210
+random_seed44,67737,14515,14516,True,210,210,210
+random_seed45,67737,14515,14516,True,210,210,210
+random_seed46,67737,14515,14516,True,210,210,210
+sweep_group_seed42,62731,14539,19498,True,0,0,0
+sweep_group_seed43,61539,15562,19667,True,0,0,0
+sweep_group_seed44,62200,15225,19343,True,0,0,0
+sweep_group_seed45,62194,15480,19094,True,0,0,0
+sweep_group_seed46,63157,14445,19166,True,0,0,0

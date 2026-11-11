@@ -1,0 +1,29 @@
+{
+  "qat_A.py": "20ddddb0f22dfd21df2982fba7e0e2b8ba62e397ad12296cdcc9867dc124aa03",
+  "qat_fold_pipeline.py": "486df5b8bb5f2ad2107bc00661a72b7f928b18de917567953643f5c1b6c9c848",
+  "train.py": "fb47e92fe3e86c0c85a410f7459e14360c05cbdf2694457c6ec23e73f6c09c30",
+  "iatopt\\core.py": "9b719ac93adf4488d7df6dfbc550907b720a9a633776a77f65ca12be74fb0ed2",
+  "iatopt\\core_backup_20260904.py": "93622e9f8c94dccd0f52072df55bf5863263dbe238f21a1271ed22a025088690",
+  "iatopt\\qat2.py": "e07283298b5ce2054e295e53aa09ee7f79f2e81f0053ed325fd57f26520acd04",
+  "iatopt\\quantization.py": "fd931aef1a02857e8757331764937e2e3ad87f8d0abeebc46621e30a62a480f7",
+  "iatopt\\teacher_quality.py": "805414e5b8ec9783df8c45d4f8fdfaddd8c2357df677825c4a7370a098af3828",
+  "iatopt\\__init__.py": "c9b07fe76f4e0c51191f70f069b5252d157da9e339347375687151e7bdc2b1d5",
+  "split0": "6da515a9a2a80f60158f36d3c447a68887c5c2cf9ba170b869c9cba4123aa795",
+  "split1": "21d30faf0bd1356087579d5ebda46ffa4d82b19ede36ad8cfbf65203db91db20",
+  "split2": "cac166922c054cc0ca9e2c935b9566599ed048150ee6f9b61ba63ff7b75ed101",
+  "split3": "e77c382da9c9c1e9a0678ef6df5c5320de1fadb13c17d31551de1c6a5897306d",
+  "split4": "67c6e29a889fa3d547b4b275928fc81bdfdba2d8cf1770d4bd541a4ecfe97db5",
+  "x_train.csv": "0837fa27346321e6e1cefa28e9d9f8b9b98fae1c8c7192e9a39696a30e2e6c42",
+  "y_train.csv": "b679e296e6c8132455e8a89a169ebe80be014540fb0b8829de074f89719393b6",
+  "modified_source_hashes": {
+    "qat_A.py": "20ddddb0f22dfd21df2982fba7e0e2b8ba62e397ad12296cdcc9867dc124aa03",
+    "qat_fold_pipeline.py": "486df5b8bb5f2ad2107bc00661a72b7f928b18de917567953643f5c1b6c9c848",
+    "train.py": "78e39ffe61333e357a35d31825d7b41e5f317d4e0618cd7458b5374e9e406ed5",
+    "iatopt\\core.py": "0580d9d04cc43ec8acdba5bdd1551265a095a41855415f9278414095d5b547d5",
+    "iatopt\\core_backup_20260904.py": "93622e9f8c94dccd0f52072df55bf5863263dbe238f21a1271ed22a025088690",
+    "iatopt\\qat2.py": "e07283298b5ce2054e295e53aa09ee7f79f2e81f0053ed325fd57f26520acd04",
+    "iatopt\\quantization.py": "fd931aef1a02857e8757331764937e2e3ad87f8d0abeebc46621e30a62a480f7",
+    "iatopt\\teacher_quality.py": "805414e5b8ec9783df8c45d4f8fdfaddd8c2357df677825c4a7370a098af3828",
+    "iatopt\\__init__.py": "c9b07fe76f4e0c51191f70f069b5252d157da9e339347375687151e7bdc2b1d5"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "variant": "A",
+  "sha256": "07f8ff773e70fb92070f6e205987f546860ceceea0371efacaadbdea8b85de54",
+  "bytes": 4656,
+  "correct": 95692,
+  "rows": 96768,
+  "accuracy_percent": 98.88806216931218,
+  "full_scalar_numpy_agreement": true,
+  "scope": "full-data fit, not held-out accuracy"
+}

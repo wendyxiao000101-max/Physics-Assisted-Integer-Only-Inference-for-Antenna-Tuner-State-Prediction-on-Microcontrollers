@@ -1,0 +1,6 @@
+特征一实部：gammaIn1Re，闭环态的反射系数实部	
+特征一虚部：gammaIn1Im，闭环态的反射系数虚部	
+特征二：closeFreqMHz，闭环态的中心频点	
+特征三：itState，开关状态	
+特征四实部：gammaIn2Re，默认态的反射系数实部	
+特征四虚部：gammaIn2Im，默认态的反射系数虚部	

@@ -1,0 +1,107 @@
+{
+  "baseline": {
+    "table": "VI, VII",
+    "note": "Reference recipe (gate 0.05, noise 0.06, decay end 0.70, cosine scale 20).",
+    "set": {},
+    "drop_prefix": []
+  },
+  "gate_0025": {
+    "table": "VI",
+    "note": "Distance gate 0.025.",
+    "set": {
+      "--physics-min-distance": "0.025"
+    },
+    "drop_prefix": []
+  },
+  "gate_0075": {
+    "table": "VI",
+    "note": "Distance gate 0.075.",
+    "set": {
+      "--physics-min-distance": "0.075"
+    },
+    "drop_prefix": []
+  },
+  "sigma_003": {
+    "table": "VI",
+    "note": "Synthetic noise 0.03.",
+    "set": {
+      "--physics-sigma": "0.03"
+    },
+    "drop_prefix": []
+  },
+  "sigma_009": {
+    "table": "VI",
+    "note": "Synthetic noise 0.09.",
+    "set": {
+      "--physics-sigma": "0.09"
+    },
+    "drop_prefix": []
+  },
+  "decay_035": {
+    "table": "VI",
+    "note": "Guidance-decay endpoint 0.35.",
+    "set": {
+      "--physics-decay-end": "0.35"
+    },
+    "drop_prefix": []
+  },
+  "decay_100": {
+    "table": "VI",
+    "note": "Guidance-decay endpoint 1.00.",
+    "set": {
+      "--physics-decay-end": "1.0"
+    },
+    "drop_prefix": []
+  },
+  "scale_10": {
+    "table": "VI",
+    "note": "Cosine scale 10.",
+    "set": {
+      "--head-scale": "10"
+    },
+    "drop_prefix": []
+  },
+  "scale_30": {
+    "table": "VI",
+    "note": "Cosine scale 30.",
+    "set": {
+      "--head-scale": "30"
+    },
+    "drop_prefix": []
+  },
+  "no_physics": {
+    "table": "VII",
+    "note": "Physical supervision disabled (no synthetic inputs, no teacher targets).",
+    "set": {
+      "--physics-teacher": "none"
+    },
+    "drop_prefix": [
+      "--physics"
+    ]
+  },
+  "no_ala": {
+    "table": "VII",
+    "note": "Cross-entropy in place of ALA; the class-pair factor is removed as well.",
+    "set": {
+      "--loss": "ce",
+      "--pairwise-ala-strength": "0"
+    },
+    "drop_prefix": []
+  },
+  "no_pairwise": {
+    "table": "VII",
+    "note": "ALA retained, class-pair factor strength 0.",
+    "set": {
+      "--pairwise-ala-strength": "0"
+    },
+    "drop_prefix": []
+  },
+  "no_traj": {
+    "table": "VII",
+    "note": "Trajectory-consistency weight 0.",
+    "set": {
+      "--trajectory-consistency-weight": "0"
+    },
+    "drop_prefix": []
+  }
+}

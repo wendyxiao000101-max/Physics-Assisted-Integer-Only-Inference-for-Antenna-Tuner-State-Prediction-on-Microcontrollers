@@ -1,0 +1,30 @@
+{
+  "variant": "A: network QAT snapshot, no additional head QAT",
+  "full_rows": 96768,
+  "full_scalar_numpy_agreement": true,
+  "fp32_files_unchanged": true,
+  "head_bias_nonzero_count": 0,
+  "fp32_full_fit": {
+    "rows": 96768,
+    "seconds": 0.0751285000005737,
+    "model_bytes": 23978,
+    "model_sha256": "0f62b1b2cbc114b1d7d3e575d29321501faa33f8c258f1af78a22c1e792a7d5a",
+    "correct": 95965,
+    "errors": 803,
+    "accuracy_percent": 99.17018022486772,
+    "scope": "full training-set refit, not held-out test accuracy"
+  },
+  "int8_A_full_fit": {
+    "rows": 96768,
+    "seconds": 0.5202084999909857,
+    "model_bytes": 4656,
+    "model_sha256": "07f8ff773e70fb92070f6e205987f546860ceceea0371efacaadbdea8b85de54",
+    "correct": 95692,
+    "errors": 1076,
+    "accuracy_percent": 98.88806216931216,
+    "scope": "full training-set refit, not held-out test accuracy"
+  },
+  "source_zip_sha256": "a1ec734283a83020e54ebe9f4551a3c28e5ac2a40dee9232ee8dd7dabc654be2",
+  "source_member": "PC双模型推理与训练/PC双模型推理与训练/training/qat_integer_snapshot.bin",
+  "note": "Full-data fitting results; grouped A mean 94.510060% describes separate fold-trained models, not this single binary. No retraining performed."
+}

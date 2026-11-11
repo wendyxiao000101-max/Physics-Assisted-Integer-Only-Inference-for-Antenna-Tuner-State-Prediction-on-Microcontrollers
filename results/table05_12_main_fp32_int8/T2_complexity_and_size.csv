@@ -1,0 +1,4 @@
+﻿model,params,macs,flops,weight_bytes,artifact_bytes,note
+FP32 hybrid (源模型),2800,3168,6336,11200,14793,折叠前，含混合头 alpha
+FP32 folded (精简),2784,2688,5376,11136,23978,"TorchScript；权重 11,136 B"
+INT8 integer-only,2784,2688,5376,2688,4656,含 INT32 偏置 444 + 乘数 444 + GELU LUT 1024 + 输入参数 40 + 头 8 + 魔数 8

@@ -1,0 +1,424 @@
+ESP32-S3 板端部署总结：FP32 与 INT8 两套推理工程
+================================================================
+
+任务：把仓库中已有的 5 维输入、15 类分类小网络部署到 ESP32-S3，分别以
+FP32 与 INT8 两种数值格式运行，测量片上准确率与逐帧纯推理延迟，并做
+横向对比。
+
+
+1. 硬件环境
+----------------------------------------------------------------
+
+1.1 主控芯片
+
+  芯片            ESP32-S3（启动日志：chip revision v0.2，
+                  efuse block revision v1.4）
+  CPU             Xtensa LX7 双核 32 位，本次运行频率 160 MHz
+                  （CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ=160）
+  浮点能力        单核带单精度硬件 FPU，FP32 乘加为硬件指令；
+                  无双精度硬件支持
+  片上 ROM        384 KB（固化启动代码，用户不可用）
+  片上 SRAM       512 KB（另有 16 KB RTC SRAM）
+  本次使用核心    仅 CPU0 主任务，未做双核并行
+
+1.2 外部存储
+
+  模组标称        ESP32-S3-WROOM-1 N16R8：
+                  16 MB Quad SPI Flash + 8 MB Octal SPI PSRAM
+  本次固件配置    CONFIG_ESPTOOLPY_FLASHSIZE_2MB=y，只使用前 2 MB
+                  Flash 模式 DIO，频率 80 MHz
+  PSRAM           CONFIG_SPIRAM 未启用，本次实验完全没有使用 PSRAM
+  实际占用        应用分区 0x10000~0x90000（512 KB）
+                  数据分区 0x90000~0x200000（1,507,328 B）
+
+1.3 存储层次与访问方式（本实验相关）
+
+  内部 SRAM   CPU 直接访问，无需 Cache。存放栈、模型权重静态数组、
+              推理中间结果、延迟直方图。
+  SPI Flash   通过 MMU + Cache + MSPI 控制器访问。数据集以
+              esp_partition_mmap() 映射为只读指针，按需经 Cache 读取，
+              不整体载入 RAM，也不经过 DMA。
+  PSRAM       本次未启用。
+  说明        两套工程的数据读取路径完全相同，均为 Flash mmap + Cache，
+              因此存储访问不构成两者之间的差异项。
+
+1.4 串口链路
+
+  控制台       UART0，波特率 115200
+  配置项       CONFIG_ESP_CONSOLE_UART_DEFAULT=y
+  历史问题     初始配置为 CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y，
+               应用接管后切换到原生 USB 控制台，导致板载 USB-UART
+               的 COM 口在 "I (167) cpu_start..." 处中断、看不到任何
+               应用输出。改为 UART0 后恢复正常。
+
+
+2. 软件运行时环境
+----------------------------------------------------------------
+
+2.1 固件侧
+
+  ESP-IDF         v5.2.6-1174-ga681415af6-dirty
+  编译器          xtensa-esp-elf-gcc (crosstool-NG esp-13.2.0_20250707) 13.2.0
+  IDF Python 环境 Python 3.10.10
+  esptool         v4.11.0
+  操作系统层      FreeRTOS（IDF 内置），主任务栈 8192 B，
+                  任务看门狗超时 60 s
+  日志级别        CONFIG_LOG_DEFAULT_LEVEL_WARN，
+                  CONFIG_BOOTLOADER_LOG_LEVEL_WARN
+  分区表          自定义 partitions.csv（两套工程完全一致）
+
+2.2 上位机 / 参考实现侧
+
+  开发主机        macOS 26.4.1，arm64
+  Python          3.10.10，numpy 2.2.6，joblib 1.6.0（用于读取 scaler）
+  仓库参考结果    由 tested_versions.json 记录的环境产生：
+                  Python 3.12.14、numpy 2.5.2、torch 2.11.0+cu128、
+                  joblib 1.5.3
+
+2.3 工程目录
+
+  esp-int8/   INT8 板端工程（原 esp32s3 目录，后改名）
+  esp-fp32/   FP32 板端工程（本次新建）
+  两者共用仓库根目录的 data/ 与 models/，共用同一份分区表与数据集格式。
+
+
+3. 模型与数据
+----------------------------------------------------------------
+
+3.1 网络结构（两套完全相同的拓扑）
+
+  输入          5 个原始整数 [g1Re, g1Im, freq, g2Re, g2Im]
+  结构          residual32_gelu_relu_hybrid
+                stem   : Linear 5  -> 32，后接 GELU
+                block1 : Linear 32 -> 32，后接 ReLU
+                block2 : Linear 32 -> 32，输出与 stem 输出相加
+                残差后 : ReLU
+                head   : Linear 32 -> 15（无偏置），乘以 head_scale = 20
+  输出          15 类分数取 argmax，类别 0~14
+  线性 MAC      160 + 1024 + 1024 + 480 = 2,688 次/样本
+
+3.2 两种数值格式的模型文件
+
+  INT8  esp-int8/main/model_int8.bin
+        魔数 I8R32V02，4,656 字节
+        SHA256 07f8ff773e70fb92070f6e205987f546860ceceea0371efacaadbdea8b85de54
+        内容：5 组 offset/step 量化常量、hz 零点、1024 项整数 GELU 查表、
+              4 层 int8 权重 + int32 偏置 + int32 定点乘子、残差 skip 系数。
+        以 C 数组（model_blob.c）编入固件。
+
+  FP32  esp-fp32/main/fp32_model.bin
+        魔数 F32R32V1，11,144 字节（8 字节魔数 + 2,784 个 float）
+        SHA256 2812923fd64f08c4c31f55d2a8eee2bf48332663340fc3534ee81e4ea9093371
+        由 gen_model_blob.py 从 models/fp32/model_fp32_folded.pt 的
+        TorchScript 归档中逐字节提取 7 个权重/偏置张量拼接而成，
+        不重新训练、不改动数值。
+        以 EMBED_FILES 方式编入固件。
+
+3.3 数据集
+
+  来源        data/x_train.csv、data/y_train.csv（GBK 编码、带表头）
+  行数        96,768
+  取列        六维时丢弃第 4 列 itState，只取 [g1Re, g1Im, freq, g2Re, g2Im]
+  打包        gen_dataset.py 生成 dataset.bin：
+              前段 int16 特征 96,768 x 5（小端），后段 uint8 标签 96,768
+              合计 1,064,448 字节
+  校验        两套工程生成的 dataset.bin 内容完全一致
+              MD5 6fb857e92285b55eca51453f2d266cd4
+  烧录        单独写入 0x90000 的 dataset 分区，idf.py flash 不会烧它
+  性质        该数据为训练集，片上评测属于全量回代，不是留出测试集
+
+
+4. 实验设计
+----------------------------------------------------------------
+
+4.1 两套代码对输入数据的处理方式
+
+  共同点：设备端拿到的都是 Flash 中的 5 个 int16 原始整数，都不使用
+  任何外部预处理文件之外的额外变换，argmax 都在片上完成。
+
+  INT8 路径
+    量化常量（offset/step）已经编码在 model_int8.bin 内部，
+    无需 scaler.pkl。每个特征按
+      u = clip(floor((2*(x-offset)+step) / (2*step)), 0, 255)
+      q = u - 128
+    量化为 int8。该步骤实现在 int8_predict() 内部
+    （esp-int8/main/integer_runtime.c）。
+    网络内部：int8 权重与激活、int32 偏置与累加、int64 定点乘积、
+    移位重量化、整数 GELU 查表、整数残差，全程无浮点。
+
+  FP32 路径
+    使用 models/fp32/scaler.pkl 中的均值与标准差，以双精度常量写死在
+    esp-fp32/main/main.c 中：
+      mean  = [13965.23264922, 10802.05065724, 765.71775794,
+               2255.51790881, 8177.99197049]
+      scale = [10544.15344313, 11311.47302761, 54.57597201,
+               8229.86924800, 10971.56968030]
+    标准化按 (x - mean) / scale 以 double 计算后转 float，
+    与 PC 端 infer_fp32.py 的顺序一致。
+    网络内部：全部 float 乘加，GELU 使用 erff() 精确公式
+      0.5 * x * (1 + erf(x / sqrt(2)))
+    与 torch.gelu 的默认精确实现对应，不使用 tanh 近似。
+
+4.2 数据存放位置与推理时的数据流动
+
+  模型权重
+    上电后从固件 Flash 的只读区复制到内部 SRAM 的静态数组
+    （int8_model_load / fp32_model_load 各执行一次），
+    推理期间权重全部命中内部 SRAM，不再访问 Flash。
+
+  样本数据
+    始终留在 Flash 的 dataset 分区，通过 esp_partition_mmap() 映射。
+    逐帧流动路径：
+      Flash dataset 分区
+        -> MMU/Cache 读取当前帧 5 个 int16
+        -> 复制到内部 SRAM 的局部数组（栈）
+        -> 量化 / 标准化
+        -> 网络计算（权重与中间结果均在内部 SRAM）
+        -> argmax 得到类别
+        -> 与该帧标签比较，累加正确数
+    整个过程不使用 PSRAM，不使用 DMA，不做批处理。
+
+4.3 逐帧检测逻辑
+
+  1) 加载模型，映射数据集分区。
+  2) 预热 100 帧：完整走一遍取数、预处理、推理，结果累加到 volatile
+     变量，防止被编译器优化掉；预热结果不计入任何统计。
+  3) 标定计时器开销：连续 1000 次读取相邻两次 Cycle Counter，
+     取最小差值作为读取自身开销，后续每帧扣除。
+  4) 主循环对全部 96,768 帧依次执行：
+       取出该帧 5 个 int16 并复制到局部数组（不计时）
+       读 Cycle Counter -> 预处理 + 网络 + argmax -> 读 Cycle Counter
+       扣除计时开销，得到该帧纯推理周期数
+       更新最小值、最大值、累加和、直方图
+       预测与标签比较，累加正确数
+  5) 全部跑完后一次性打印结果，之后主任务永久挂起。
+  6) 计时区间内不做任何打印、不分配内存、不主动让出 CPU。
+     中断与调度带来的抖动被保留，正是 P95/P99 需要反映的内容。
+
+4.4 准确率测量方式
+
+  片上逐帧把 argmax 结果与 dataset 分区中的标签比较，累加正确数，
+  最后按 correct/96768 输出 6 位小数（向零截断）。
+  这是训练集全量回代，不是留出测试。
+
+  一致性验证（部署正确性的关键证据）：
+    INT8  esp-int8/main/pc_check.c 用同一份 C 核在电脑上跑 7 条金标样本，
+          与 fast_integer_runtime.py 输出完全一致（首条
+          9021 -3716 737 531 18969 的类别为 6）。
+    FP32  esp-fp32/main/pc_check.c 用同一份 C 核在电脑上跑完整
+          96,768 行，与仓库 results/fp32/full/predictions.csv 逐条比对，
+          结果为 correct=95965 agreement=96768，即与原 TorchScript
+          模型的预测 100% 一致。
+    片上打印的准确率与上述 PC 参考值完全吻合，说明移植无数值偏差。
+
+4.5 延迟测量方式
+
+  计时器        CPU Cycle Counter（esp_cpu_get_cycle_count），
+                160 MHz 下 1 周期 = 6.25 ns，
+                换算 微秒 = 周期数 / 160
+                实测读取开销为 1 个周期，已逐帧扣除
+  为何不用      esp_timer_get_time() 分辨率为 1 微秒，单帧几百微秒时
+                量化误差偏大，且无法反映亚微秒级抖动
+  计时边界      开始：取数与复制之后
+                结束：argmax 之后
+                含：预处理（INT8 量化 / FP32 标准化）、全部线性层、
+                    激活、残差、argmax
+                不含：Flash 读取、int16 复制、准确率比较、串口输出、
+                      每若干帧的任务让出
+  统计方法      平均值与最大值用原始周期精确计算；
+                P50/P95/P99 用在线直方图：桶宽 64 周期（0.4 微秒），
+                16,384 个桶，覆盖到 1,048,576 周期；
+                两次实验的 histogram_overflow 均为 0，说明所有样本
+                都落在统计范围内
+  已知局限      百分位分辨率受 64 周期桶宽限制，报告的是桶上边界，
+                因此可能略高于真实值（INT8 实验中出现 p99 显示值
+                60863 略大于 max 60860 的情况，真实 P99 应理解为
+                不超过 max）。FP32 工程已加入对 max 的钳位。
+
+4.6 两套实验的公平性说明
+
+  计时边界一致  两者都把 Flash 读取与 int16 复制排除在外，
+                都把各自的预处理（INT8 量化 / FP32 标准化）计入。
+                FP32 最初版本把标准化放在计时外，测得平均 306.754 微秒；
+                为与 INT8 对齐，已改为计入，最终数据以计入后的为准。
+                由此可反推 FP32 标准化本身约占 22.12 微秒。
+  其余条件一致  同一块板、同一频率、同一 IDF 版本与编译选项、
+                同一数据集与读取路径、同样的预热与统计方法。
+
+
+5. 实验结果
+----------------------------------------------------------------
+
+5.1 INT8 工程原始输出
+
+  START rows=96768 warmup=100 cpu_mhz=160 timer_overhead_cycles=1 sink=659
+  RESULT rows=96768 correct=95692 errors=1076 accuracy=98.888062 inference_total_us=35966477
+  LATENCY_CYCLES pure_inference count=96768 overhead=1 min=59390 mean=59468 p50=59455 p95=59519 p99=60863 max=60860 histogram_overflow=0
+  LATENCY_US pure_inference min=371.187 mean=371.677 p50=371.593 p95=371.993 p99=380.393 max=380.375
+
+5.2 FP32 工程原始输出（标准化已计入计时）
+
+  BOOT embedded-dataset fp32
+  START rows=96768 warmup=100 cpu_mhz=160 timer_overhead_cycles=1 sink=659
+  RESULT rows=96768 correct=95965 errors=803 accuracy=99.170180 inference_total_us=31824521
+  LATENCY_CYCLES pure_inference count=96768 overhead=1 min=51661 mean=52619 p50=52479 p95=53951 p99=55039 max=57082 histogram_overflow=0
+  LATENCY_US pure_inference min=322.881 mean=328.874 p50=327.993 p95=337.193 p99=343.993 max=356.762
+
+
+6. 对比与评价
+----------------------------------------------------------------
+
+6.1 准确率（96,768 条全量回代）
+
+  指标              FP32            INT8-A          差异
+  正确数            95,965          95,692          FP32 多 273 条
+  错误数            803             1,076           INT8 多 273 条
+  准确率            99.170180%      98.888062%      FP32 高 0.282 个百分点
+  相对错误率        0.829820%       1.111938%       INT8 错误数为 FP32 的 1.34 倍
+  与 PC 参考一致    完全一致        完全一致        两者移植均无数值偏差
+
+  评价：量化带来的精度损失明确存在但不大，绝对下降约 0.28 个百分点；
+  若换算成错误率，INT8 的错误样本数比 FP32 多约三分之一。是否可接受
+  取决于应用对错误率的敏感程度。需要强调这是训练集回代结果，不能
+  当作泛化性能；仓库 README 也注明 INT8-A 的五折分组均值 94.510060%
+  来自另外五个单独训练的模型，与本二进制不是同一口径。
+
+6.2 时间性能（片上纯推理，含各自预处理）
+
+  指标              FP32            INT8-A          对比
+  平均              328.874 us      371.677 us      FP32 快 42.803 us（11.5%）
+  P50               327.993 us      371.593 us      FP32 快 43.600 us
+  P95               337.193 us      371.993 us      FP32 快 34.800 us
+  P99               343.993 us      380.393 us      FP32 快 36.400 us
+  最小              322.881 us      371.187 us      FP32 快 48.306 us
+  最大              356.762 us      380.375 us      FP32 快 23.613 us
+  平均周期数        52,619          59,468          FP32 少 6,849 周期
+  吞吐率            约 3,041 次/秒  约 2,690 次/秒  FP32 高约 13.0%
+  全集总耗时        31.82 s         35.97 s         FP32 少 4.14 s
+  每 MAC 平均       约 19.6 周期    约 22.1 周期    以 2,688 次线性 MAC 计
+
+  评价：在本实现下 FP32 反而比 INT8 更快。原因是 ESP32-S3 具备单精度
+  硬件 FPU，float 乘加是单条指令；而当前 INT8 核是通用标量 C 实现，
+  每个输出都要做 int64 定点乘、移位重量化、饱和截断，预处理中还含有
+  按 Python 语义实现的向下取整除法，没有使用 ESP-DL 或任何 SIMD/向量
+  指令。因此这个结论只说明"本工程的两个具体实现"的相对快慢，不能
+  推广为"ESP32-S3 上 INT8 一定慢于 FP32"。若改用 ESP-DL 的向量化
+  int8 算子，INT8 的时间优势通常才会体现出来。
+
+6.3 延迟稳定性
+
+  指标                      FP32          INT8-A
+  最大值 - 最小值           33.881 us     9.188 us
+  P99 - P50                 16.000 us     8.800 us
+  最大值 / 平均值           1.085         1.023
+  直方图溢出                0             0
+
+  评价：INT8 的延迟离散度明显更小，几乎是固定时长；FP32 的抖动更大。
+  原因在于整数核的执行路径与数据无关，而 FP32 路径中 erff() 的分支与
+  浮点运算耗时会随输入取值变化。对硬实时场景，INT8 的可预测性是实打
+  实的优点：它的最坏情况（380.375 us）与平均值只差 2.3%，而 FP32 的
+  最坏情况比平均值高 8.5%。若以最坏情况而非平均值做系统预算，两者
+  差距会从 11.5% 缩小到 6.2%。
+
+6.4 空间占用
+
+  模型本体（Flash）
+    INT8   4,656 B（固件中占 4,660 B）
+    FP32   11,144 B（固件中占 11,148 B）
+    INT8 为 FP32 的 41.8%，节省 6,488 B
+
+  推理核权重的静态 RAM（.bss）
+    INT8   4,732 B（integer_runtime.c）
+    FP32   11,204 B（fp32_runtime.c）
+    INT8 为 FP32 的 42.2%，节省 6,472 B
+
+  整体固件静态占用
+    项目                    INT8        FP32        差值
+    静态 D/IRAM             124,195 B   130,675 B   FP32 多 6,480 B
+    内部 RAM 剩余           221,661 B   215,181 B
+    Flash 使用量            122,975 B   130,419 B   FP32 多 7,444 B
+    镜像总大小              191,049 B   198,485 B   FP32 多 7,436 B
+    生成的 .bin             191,152 B   198,592 B
+
+  其他
+    FP32 额外链入 libm 的 erff 实现（libm_a-sf_erf.o，约 1,233 B Flash），
+    这是 Flash 差值大于模型本身差值的主要原因。
+    两套固件的 main.c 各有 65,536 B 的 .bss 用于延迟直方图
+    （16,384 桶 x 4 B），属于测量设施，正式产品可以去掉。
+    推理中间结果均为栈上局部数组，规模很小：
+      INT8 约 101 B（5+32+32+32 个 int8 与 32 个 int64 临时）
+      FP32 约 448 B（5+32+32+32+15 个 float）
+    两者都远小于 8192 B 的主任务栈。
+
+  评价：空间是 INT8 唯一且明确的优势维度，模型体积与权重 RAM 都只有
+  FP32 的约 42%。对本网络而言绝对节省量只有约 6.4 KB，在 512 KB SRAM
+  的 ESP32-S3 上无关紧要；但若模型规模放大两个数量级，或需要同时驻留
+  多个模型、部署到 SRAM 更小的芯片上，这个比例优势才会转化为决定性
+  因素。
+
+6.5 综合结论
+
+  在本次部署条件下：
+    - 准确率：FP32 胜（99.170180% 对 98.888062%）
+    - 平均延迟与吞吐：FP32 胜（快 11.5%，吞吐高 13.0%）
+    - 延迟可预测性：INT8 胜（抖动仅为 FP32 的约四分之一）
+    - 模型体积与权重 RAM：INT8 胜（均约为 FP32 的 42%）
+    - 工程复杂度：INT8 略优，量化常量自带、无需 scaler、无浮点依赖
+
+  因此对当前这个 2,688 MAC 的小网络、在带硬件 FPU 的 ESP32-S3 上、
+  用标量 C 实现的前提下，FP32 是更均衡的选择：精度更高、平均更快，
+  代价只是约 6.4 KB 的额外 Flash 与 RAM。选择 INT8 的合理理由是
+  存储受限、需要严格确定的执行时长，或后续准备接入 ESP-DL 的向量化
+  int8 算子以换取真正的速度优势。
+
+  本结论的适用边界：单核、160 MHz、标量 C 实现、训练集回代、
+  样本从 Flash 顺序读取、不含通信与外设开销。更换任何一项条件，
+  尤其是启用 240 MHz、向量化算子或改为逐帧串口问答，结论都需要
+  重新测量。
+
+
+7. 复现步骤
+----------------------------------------------------------------
+
+  # 准备
+  . $HOME/esp/esp-idf/export.sh
+
+  # INT8
+  cd esp-int8
+  python3 gen_dataset.py
+  idf.py build
+  idf.py -p <端口> flash
+  python -m esptool --chip esp32s3 -p <端口> write_flash 0x90000 main/dataset.bin
+  idf.py -p <端口> monitor
+
+  # FP32
+  cd esp-fp32
+  python3 gen_model_blob.py
+  python3 gen_dataset.py
+  idf.py build
+  idf.py -p <端口> flash
+  # dataset 分区内容与 INT8 完全相同，已烧录过可跳过下一行
+  python -m esptool --chip esp32s3 -p <端口> write_flash 0x90000 main/dataset.bin
+  idf.py -p <端口> monitor
+
+  # PC 侧一致性检查（不需要开发板）
+  cd esp-int8
+  cc -O2 -std=c11 -I main -o /tmp/int8_pc_check \
+     main/pc_check.c main/integer_runtime.c main/model_blob.c
+  /tmp/int8_pc_check            # 首行应为 6
+
+  cd ../esp-fp32
+  cc -O2 -std=c11 -I main -o /tmp/fp32_pc_check \
+     main/pc_check.c main/fp32_runtime.c -lm
+  /tmp/fp32_pc_check main/fp32_model.bin main/dataset.bin \
+     ../results/fp32/full/predictions.csv
+  # 应输出 rows=96768 correct=95965 agreement=96768
+
+  常见故障
+    监视器停在 "I (167) cpu_start"：控制台选成了 USB-Serial-JTAG，
+      而实际连的是板载 USB-UART。改 CONFIG_ESP_CONSOLE_UART_DEFAULT=y
+      后 idf.py fullclean 重新编译烧录。
+    ERR dataset partition / ERR dataset mmap：dataset 分区未烧录或
+      分区表未更新。
+    ERR model_load：编入固件的模型二进制与预期魔数或长度不符。
+    准确率不等于上述数值：dataset.bin 与仓库 CSV 不一致，重新生成并烧录。

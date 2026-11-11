@@ -1,0 +1,4 @@
+﻿model,representation,bytes,test_acc_fold42,scalar_n_calls,scalar_median_us,scalar_p95_us,scalar_p99_us,scalar_mean_us,numpy_batched_us_per_sample,sklearn_batch1_median_us,macs,lut_lookups,requant_ops,comparisons_mean,comparisons_max,leaf_accumulations,n_trees
+residual32 INT8 (deployed blob; acc from fold-42 INT8),I8R32V02,4656,95.55851882244333,10000,363.7,493.4,658.9,368.67701,5.48385988306493,,2688,32,111,0.0,0,0,0
+decision_tree(max_depth=16),hard,2053,90.51184736896091,10000,3.5,5.2,6.3,3.6634800000000003,0.3758923992204328,102.15,0,0,0,8.257,15,1,1
+"extra_trees(n_estimators=200,max_depth=None)",hard,1128372,93.31213457790543,10000,649.1500000000001,986.4,1215.2,667.50521,90.7825725715458,10527.8,0,0,0,2094.8705,3067,200,200

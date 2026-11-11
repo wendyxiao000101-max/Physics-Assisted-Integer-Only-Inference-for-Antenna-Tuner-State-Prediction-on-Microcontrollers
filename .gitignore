@@ -1,0 +1,12 @@
+runs/
+__pycache__/
+*.pyc
+.venv*/
+build/
+sdkconfig
+sdkconfig.old
+managed_components/
+dependencies.lock
+.DS_Store
+deploy/pc_reference/results/
+deploy/esp32s3_baseline_160mhz/*/main/dataset.bin

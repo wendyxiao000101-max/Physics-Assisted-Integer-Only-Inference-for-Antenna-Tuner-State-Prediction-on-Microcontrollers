@@ -1,0 +1,5 @@
+﻿config,representation,fold_seed,encoded_bytes,formula_bytes,bytes_match,agree_with_scan_pct,test_acc_from_bytes
+decision_tree(max_depth=16),hard,42,2053,2053,True,100.0,90.51184736896091
+"extra_trees(n_estimators=200,max_depth=None)",hard,42,1128372,1128372,True,100.0,93.31213457790543
+"hist_gb(max_iter=200,max_leaf_nodes=4)",gbdt_f32,42,117068,117068,True,100.0,90.8195712380757
+"extra_trees(n_estimators=200,max_depth=None)",soft_u8,42,3949782,3949782,True,100.0,93.31213457790543

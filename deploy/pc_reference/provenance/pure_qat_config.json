@@ -1,0 +1,10 @@
+{
+  "epochs": 2000,
+  "lr": 0.1,
+  "focal": 1.0,
+  "temperature": 1,
+  "batch": 96768,
+  "run": "head_focal10_long",
+  "source_sha256": "07f8ff773e70fb92070f6e205987f546860ceceea0371efacaadbdea8b85de54",
+  "method": "gradient-only QAT; no discrete or bias search"
+}
